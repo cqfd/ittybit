@@ -58,7 +58,7 @@
         sock (. udp (createSocket "udp4"))]
     (. sock (on "message"
                 (fn [buf rinfo]
-                  (let [peer-buf (. buf (slice 20 (.-length buf)))]
+                  (let [peer-buf (. buf (slice 20))]
                     (put! c (parse-peers peer-buf))))))
     (. sock (send (announce-req host port info-hash conn-id)
                   0 98 port host))

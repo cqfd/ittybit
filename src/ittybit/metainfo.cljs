@@ -19,8 +19,7 @@
     (sha1 (. b (encode info)))))
 
 (defn split-every [n buf]
-  (loop [acc []
-         buf buf]
+  (loop [acc [] buf buf]
     (if (= 0 (.-length buf))
       acc
       (recur (conj acc (. buf (slice 0 n)))
