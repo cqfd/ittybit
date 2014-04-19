@@ -1,7 +1,7 @@
 (ns ittybit.core
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.nodejs :as n]
-            [cljs.core.async :refer [<! chan put!]]
+            [cljs.core.async :refer [<! chan close! put!]]
             [ittybit.metainfo :as minfo]
             [ittybit.tracker :as tracker]
             [ittybit.protocol :as protocol]))
@@ -20,18 +20,11 @@
 (defn connect-to-peer [host port info-hash peer-id]
   (let [c (chan)
         sock (. net (connect port host))]
-    (. sock (on "error"
-                (fn [err]
-                  (. js/console (log "error connecting to" host port err)))))
+    (. sock (on "error" (fn [_err] (close! c))))
     (. sock (on "connect"
                 (fn []
-                  (let [h (protocol/handshake info-hash peer-id)]
-                    (. sock
-                       (write h (fn []
-                                  (. js/console (log "sent handshake to" host port)))))))))
-    (. sock (on "data"
-                (fn [buf]
-                  (. js/console (log "received data" (. host toJSON) port buf)))))
+                  (. sock (write (protocol/handshake info-hash peer-id))))))
+    (. sock (on "data" (partial put! c)))
     c))
 
 (defn -main [torrent-path]
@@ -40,6 +33,8 @@
             peers (<! (tracker/poke (:tracker minfo) (:info-hash minfo)))
             peer-id (js/Buffer. 20)]
         (doseq [[host port] peers]
-          (connect-to-peer host port (:info-hash minfo) peer-id)))))
+          (let [incoming (connect-to-peer host port (:info-hash minfo) peer-id)]
+            (go (loop [buf (<! incoming)]
+                  (. js/console (log buf)))))))))
 
 (set! *main-cli-fn* -main)
