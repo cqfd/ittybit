@@ -5,19 +5,20 @@
 
 ;; For now we only handle udp trackers.
 
+(def B js/Buffer)
 (def ip (n/require "ip"))
 (def udp (n/require "dgram"))
 (def url (n/require "url"))
 
-(def magic (js/Buffer. #js [0x00 0x00 0x04 0x17 0x27 0x10 0x19 0x80]))
+(def magic (B. #js [0x00 0x00 0x04 0x17 0x27 0x10 0x19 0x80]))
 
 (defn get-connection-id [{:keys [host port] :as tracker}]
   (let [c (chan)
         sock (. udp (createSocket "udp4"))
-        transaction-id (js/Buffer. 4) ; random buffer
-        req (. js/Buffer (concat #js [magic
-                                      (js/Buffer. #js [00 00 00 00])
-                                      transaction-id]))]
+        transaction-id (B. 4) ; random buffer
+        req (. B (concat #js [magic
+                              (B. #js [00 00 00 00])
+                              transaction-id]))]
     (. sock (on "message"
                 (fn [buf rinfo]
                   (when [= 16 (.-length buf)]
@@ -39,20 +40,20 @@
         (recur (. buf (slice 6)) (conj peers [host port]))))))
 
 (defn announce-req [host port info-hash conn-id]
-  (. js/Buffer
+  (. B
      (concat #js [conn-id
-                  (js/Buffer. #js [0 0 0 1])             ; action
-                  (js/Buffer. 4)                         ; transaction id
+                  (B. #js [0 0 0 1])             ; action
+                  (B. 4)                         ; transaction id
                   info-hash
-                  (js/Buffer. 20)                        ; fake peer id
-                  (js/Buffer. #js [0 0 0 0 0 0 0 0])     ; downloaded
-                  (js/Buffer. #js [0 0 0 0 0 0 0 0])     ; left
-                  (js/Buffer. #js [0 0 0 0 0 0 0 0])     ; uploaded
-                  (js/Buffer. #js [0 0 0 0])             ; event
-                  (js/Buffer. #js [0 0 0 0])             ; ip address (?)
-                  (js/Buffer. #js [0 0 0 0])             ; key
-                  (js/Buffer. #js [0xff 0xff 0xff 0xff]) ; num_want
-                  (js/Buffer. #js [0x1a 0xe1])])))
+                  (B. 20)                        ; fake peer id
+                  (B. #js [0 0 0 0 0 0 0 0])     ; downloaded
+                  (B. #js [0 0 0 0 0 0 0 0])     ; left
+                  (B. #js [0 0 0 0 0 0 0 0])     ; uploaded
+                  (B. #js [0 0 0 0])             ; event
+                  (B. #js [0 0 0 0])             ; ip address (?)
+                  (B. #js [0 0 0 0])             ; key
+                  (B. #js [0xff 0xff 0xff 0xff]) ; num_want
+                  (B. #js [0x1a 0xe1])])))
 
 (defn get-peers [{:keys [host port] :as tracker} info-hash conn-id]
   (let [c (chan)
