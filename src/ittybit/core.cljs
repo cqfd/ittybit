@@ -10,9 +10,9 @@
 (def fs (n/require "fs"))
 
 (defn read-file [path]
-  (let [out (chan)]
-    (. fs (readFile path (fn [err data] (put! out data))))
-    out))
+  (let [c (chan)]
+    (. fs (readFile path (fn [err data] (put! c data))))
+    c))
 
 (defn -main [torrent-path]
   (. js/console (log "welcome to ittybit"))
