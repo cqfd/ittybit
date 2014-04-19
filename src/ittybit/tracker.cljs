@@ -41,16 +41,16 @@
 (defn announce-req [host port info-hash conn-id]
   (. js/Buffer
      (concat #js [conn-id
-                  (js/Buffer. #js [0 0 0 1]) ; action
-                  (js/Buffer. 4)             ; transaction id
+                  (js/Buffer. #js [0 0 0 1])             ; action
+                  (js/Buffer. 4)                         ; transaction id
                   info-hash
-                  (js/Buffer. 20)       ; fake peer id
-                  (js/Buffer. #js [0 0 0 0 0 0 0 0]) ; downloaded
-                  (js/Buffer. #js [0 0 0 0 0 0 0 0]) ; left
-                  (js/Buffer. #js [0 0 0 0 0 0 0 0]) ; uploaded
-                  (js/Buffer. #js [0 0 0 0])         ; event
-                  (js/Buffer. #js [0 0 0 0])         ; ip address (?)
-                  (js/Buffer. #js [0 0 0 0])         ; key
+                  (js/Buffer. 20)                        ; fake peer id
+                  (js/Buffer. #js [0 0 0 0 0 0 0 0])     ; downloaded
+                  (js/Buffer. #js [0 0 0 0 0 0 0 0])     ; left
+                  (js/Buffer. #js [0 0 0 0 0 0 0 0])     ; uploaded
+                  (js/Buffer. #js [0 0 0 0])             ; event
+                  (js/Buffer. #js [0 0 0 0])             ; ip address (?)
+                  (js/Buffer. #js [0 0 0 0])             ; key
                   (js/Buffer. #js [0xff 0xff 0xff 0xff]) ; num_want
                   (js/Buffer. #js [0x1a 0xe1])])))
 
