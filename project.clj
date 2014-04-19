@@ -6,7 +6,8 @@
                  [org.clojure/clojurescript "0.0-2202"]
                  [org.clojure/core.async "0.1.278.0-76b25b-alpha"]]
 
-  :node-dependencies [[bncode "*"]]
+  :node-dependencies [[bncode "*"]
+                      [ip "*"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-npm "0.4.0"]]

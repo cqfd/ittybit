@@ -5,6 +5,7 @@
 
 ;; For now we only handle udp trackers.
 
+(def ip (n/require "ip"))
 (def udp (n/require "dgram"))
 (def url (n/require "url"))
 
@@ -31,7 +32,7 @@
   (loop [buf buf peers []]
     (if (= 0 (.-length buf))
       peers
-      (let [host (. buf (slice 0 4))
+      (let [host (. ip (toString (. buf (slice 0 4))))
             port-buf (. buf (slice 4 6))
             port (+ (* 256 (aget port-buf 0))
                     (aget port-buf 1))]
