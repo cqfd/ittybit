@@ -24,7 +24,7 @@
                   (when [= 16 (.-length buf)]
                     (let [t-id (. buf (slice 4 8))
                           conn-id (. buf (slice 8 16))]
-                      (if (= (str transaction-id t-id))
+                      (if (= transaction-id t-id)
                         (put! c conn-id)))))))
     (. sock (send req 0 16 port host))
     c))
