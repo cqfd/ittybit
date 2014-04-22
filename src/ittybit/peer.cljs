@@ -6,9 +6,11 @@
 (def B js/Buffer)
 (def net (n/require "net"))
 
-(defn handshake [info-hash peer-id]
+(def handshake-preamble
   (. B (concat #js [(B. #js [19])
-                    (B. "BitTorrent protocol")
+                    (B. "BitTorrent protocol")])))
+(defn handshake [info-hash peer-id]
+  (. B (concat #js [handshake-preamble
                     (B. #js [0 0 0 0 0 0 0 0])
                     info-hash
                     peer-id])))
@@ -26,8 +28,7 @@
     (. sock (on "end" (fn [] (close! c))))
     (. sock (on "connect"
                 (fn []
-                  (. sock (write (handshake info-hash peer-id)))
-                  (println "wrote a handshake"))))
+                  (. sock (write (handshake info-hash peer-id))))))
     (. sock (on "data" (fn [buf]
                          (. sock pause)
                          (go (loop [buf buf]
@@ -37,7 +38,6 @@
                                    (. sock destroy))
                                  (. sock resume)))))))
     c))
-
 
 (defn literally
   [buf in]
@@ -64,13 +64,11 @@
 
 (defn get-handshake
   [in]
-  (go (let [preamble (.concat B (array (B. #js [19])
-                                       (B. "BitTorrent protocol")))]
-        (when (<! (literally preamble in))
-          (when-let [_reserved (<! (take-exactly 8 in))]
-            (when-let [info-hash (<! (take-exactly 20 in))]
-              (when-let [peer-id (<! (take-exactly 20 in))]
-                [info-hash peer-id])))))))
+  (go (when (<! (literally handshake-preamble in))
+        (when-let [_reserved (<! (take-exactly 8 in))]
+          (when-let [info-hash (<! (take-exactly 20 in))]
+            (when-let [peer-id (<! (take-exactly 20 in))]
+              [info-hash peer-id]))))))
 
 (defn get-message
   [in]
