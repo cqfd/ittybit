@@ -183,8 +183,10 @@
                         (close! incoming-bytes) ; race condition!
                         (close! outbox))))
     (. conn (on "connect" (fn []
-                            (put! c [(get-messages incoming-bytes) outbox]
-                                  (fn [_] (close! c))))))
+                            (let [peer {:inbox (get-messages incoming-bytes)
+                                        :outbox outbox}]
+                              (put! c peer
+                                    (fn [_] (close! c)))))))
     (. conn (on "data" (fn [buf]
                          (. conn pause)
                          (go (loop [buf buf]
@@ -204,7 +206,6 @@
 (defn start!
   "Returns a channel that yields a fully-connected peer."
   [host port info-hash our-peer-id]
-  (go (when-let [[inbox outbox] (<! (connect! host port))]
-        (let [peer {:inbox inbox :outbox outbox}]
-          (when-let [their-peer-id (<! (shake! peer info-hash our-peer-id))]
-            (assoc peer :peer-id their-peer-id :info-hash info-hash))))))
+  (go (when-let [peer (<! (connect! host port))]
+        (when-let [their-peer-id (<! (shake! peer info-hash our-peer-id))]
+          (assoc peer :peer-id their-peer-id :info-hash info-hash)))))
