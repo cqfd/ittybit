@@ -4,10 +4,10 @@
 
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2202"]
-                 [org.clojure/core.async "0.1.278.0-76b25b-alpha"]]
+                 [org.clojure/core.async "0.1.298.0-2a82a1-alpha"]
+                 [org.clojure/core.match "0.2.1"]]
 
-  :node-dependencies [[bncode "*"]
-                      [ip "*"]]
+  :node-dependencies [[bncode "*"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-npm "0.4.0"]]

@@ -1,7 +1,7 @@
 (ns ittybit.core
   (:require-macros [cljs.core.async.macros :refer [alt! go]])
   (:require [cljs.nodejs :as n]
-            [cljs.core.async :refer [<! chan close! put!]]
+            [cljs.core.async :refer [<! chan close! put! take]]
             [ittybit.metainfo :as minfo]
             [ittybit.tracker :as tracker]
             [ittybit.peer :as peer]))
@@ -15,16 +15,14 @@
     (. fs (readFile path (fn [err data] (put! c data))))
     c))
 
-(defn -main [torrent-path]
-  (. js/console (log "welcome to ittybit"))
-  (go (let [minfo (minfo/parse (<! (read-file torrent-path)))
-            peers (<! (tracker/poke (:tracker minfo) (:info-hash minfo)))
-            peer-id (js/Buffer. 20)]
-        (doseq [[host port] peers]
-          (let [messages (peer/connect host port (:info-hash minfo) peer-id)]
-            (go (loop []
-                  (when-let [msg (<! messages)]
-                    (println msg)
-                    (recur)))))))))
+(def our-peer-id (js/Buffer. 20))
 
-(set! *main-cli-fn* -main)
+(defn main [torrent-path]
+  (go (let [minfo (minfo/parse (<! (read-file torrent-path)))
+            hosts-and-ports (tracker/peers! (:trackers minfo) (:info-hash minfo))]
+        (loop []
+          (when-let [[host port] (<! hosts-and-ports)]
+            (println host port)
+            (recur))))))
+
+(set! *main-cli-fn* main)
