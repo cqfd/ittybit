@@ -19,10 +19,12 @@
 
 (defn main [torrent-path]
   (go (let [minfo (minfo/parse (<! (read-file torrent-path)))
-            hosts-and-ports (tracker/peers! (:trackers minfo) (:info-hash minfo))]
+            info-hash (:info-hash minfo)
+            hosts-and-ports (tracker/peers! (:trackers minfo) info-hash)]
         (loop []
           (when-let [[host port] (<! hosts-and-ports)]
-            (println host port)
+            (go (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
+                  (println (:peer-id @p))))
             (recur))))))
 
 (set! *main-cli-fn* main)

@@ -158,9 +158,9 @@
     out))
 
 (defn shake!
-  [{:keys [inbox outbox] :as peer} our-info-hash our-peer-id]
-  (go (>! outbox [:handshake our-info-hash our-peer-id])
-      (let [msg (<! inbox)]
+  [p our-info-hash our-peer-id]
+  (go (>! (:outbox @p) [:handshake our-info-hash our-peer-id])
+      (let [msg (<! (:inbox @p))]
         (when (= :handshake (msg->type msg))
           (let [[_ their-info-hash their-peer-id] msg]
             (when (= our-info-hash their-info-hash)
@@ -183,10 +183,8 @@
                         (close! incoming-bytes) ; race condition!
                         (close! outbox))))
     (. conn (on "connect" (fn []
-                            (let [peer {:inbox (get-messages incoming-bytes)
-                                        :outbox outbox}]
-                              (put! c peer
-                                    (fn [_] (close! c)))))))
+                            (put! c [(get-messages incoming-bytes) outbox]
+                                  (fn [_] (close! c))))))
     (. conn (on "data" (fn [buf]
                          (. conn pause)
                          (go (loop [buf buf]
@@ -206,6 +204,8 @@
 (defn start!
   "Returns a channel that yields a fully-connected peer."
   [host port info-hash our-peer-id]
-  (go (when-let [peer (<! (connect! host port))]
-        (when-let [their-peer-id (<! (shake! peer info-hash our-peer-id))]
-          (assoc peer :peer-id their-peer-id :info-hash info-hash)))))
+  (go (when-let [[inbox outbox] (<! (connect! host port))]
+        (let [peer (atom {:inbox inbox :outbox outbox})]
+          (when-let [their-peer-id (<! (shake! peer info-hash our-peer-id))]
+            (swap! peer assoc :peer-id their-peer-id)
+            peer)))))
