@@ -77,3 +77,15 @@
     (map (fn [[offset chunk-size]]
            [:request piece-index offset chunk-size])
          (chunks (- end start) CHUNK-SIZE))))
+
+(defn piece->writes
+  [minfo piece-idx]
+  (let [p-start (* piece-idx (:piece-length minfo))
+        p-end (+ p-start (:piece-length minfo))]
+    (filter (fn [{:keys [start end]}]
+              (< start end))
+            (map (fn [f]
+                   {:path (:path f)
+                    :start (max p-start (:start f))
+                    :end (min p-end (:end f))})
+                 (:files minfo)))))
