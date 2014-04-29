@@ -30,23 +30,23 @@
 (defn files [decoded]
   (let [info (aget decoded "info")]
     (if-let [fs (aget info "files")]
-      (for [f fs]
-        {:path (vec (aget f "path"))
-         :length (aget f "length")})
+      (first (reduce (fn [[acc start] f]
+                       (let [end (+ start (aget f "length"))]
+                         [(conj acc {:path (vec (aget f "path")) :start start :end end})
+                          end]))
+                     [[] 0]
+                     fs))
       [{:path [(aget info "name")]
-        :length (aget info "length")}])))
-
-(defn length
-  [decoded]
-  (let [fs (files decoded)]
-    (apply + (map :length fs))))
+        :start 0
+        :end (aget info "length")}])))
 
 (defn parse [buf]
-  (let [decoded (. b (decode buf))]
+  (let [decoded (. b (decode buf))
+        fs (files decoded)]
     {:trackers (trackers decoded)
-     :files (files decoded)
+     :files fs
      :info-hash (info-hash decoded)
-     :length (length decoded)
+     :length (:end (last fs))
      :piece-hashes (piece-hashes decoded)
      :piece-length (piece-length decoded)}))
 
@@ -77,4 +77,3 @@
     (map (fn [[offset chunk-size]]
            [:request piece-index offset chunk-size])
          (chunks (- end start) CHUNK-SIZE))))
-
