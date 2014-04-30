@@ -72,7 +72,7 @@
              acc []]
         (if (= i n)
           (B. (apply array acc))
-          (if-let [next (<! in)]
+          (when-let [next (<! in)]
             (recur (inc i) (conj acc next)))))))
 
 (defn get-int
