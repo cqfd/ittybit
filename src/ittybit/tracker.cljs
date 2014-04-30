@@ -124,5 +124,3 @@
   [hosts-and-ports info-hash]
   (let [ts (map tracker hosts-and-ports)]
     (unique-merge (map get-all-the-peers! ts (repeat info-hash)))))
-
-

@@ -14,9 +14,12 @@
 (defn main [torrent-path]
   (go (let [[_err, minfo-buf] (<! (fs/read-file torrent-path))
             minfo (minfo/parse minfo-buf)
-            info-hash (:info-hash minfo)]
-        (doseq [f (:files minfo)]
-          (println f)
-          (fs/open-sesame! (:path f))))))
+            info-hash (:info-hash minfo)
+            hosts-and-ports (tracker/peers! (:trackers minfo) info-hash)]
+        (when-let [[host port] (<! hosts-and-ports)]
+          (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
+            (loop []
+              (when-let [msg (<! (:inbox @p))]
+                (println msg))))))))
 
 (set! *main-cli-fn* main)
