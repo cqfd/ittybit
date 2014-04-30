@@ -28,15 +28,18 @@
   (-> decoded (aget "info") (aget "pieces")))
 
 (defn files [decoded]
-  (let [info (aget decoded "info")]
+  (let [info (aget decoded "info")
+        name (aget info "name")]
     (if-let [fs (aget info "files")]
       (first (reduce (fn [[acc start] f]
                        (let [end (+ start (aget f "length"))]
-                         [(conj acc {:path (vec (aget f "path")) :start start :end end})
+                         [(conj acc {:path (mapv str (cons name (aget f "path")))
+                                     :start start
+                                     :end end})
                           end]))
                      [[] 0]
                      fs))
-      [{:path [(aget info "name")]
+      [{:path [name]
         :start 0
         :end (aget info "length")}])))
 
