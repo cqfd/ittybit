@@ -20,7 +20,12 @@
 (defn main [torrent-path]
   (go (let [minfo (minfo/parse (<! (read-file torrent-path)))
             info-hash (:info-hash minfo)]
-        (println (:length minfo))
-        (println (:files minfo)))))
+        (dotimes [i 10]
+          (doseq [w (minfo/piece->writes minfo i)]
+            (println "path:" (:path w))
+            (println "slice-start" (:slice-start w))
+            (println "slice-end" (:slice-end w))
+            (println "seek" (:seek w))
+            (println))))))
 
 (set! *main-cli-fn* main)

@@ -82,10 +82,13 @@
   [minfo piece-idx]
   (let [p-start (* piece-idx (:piece-length minfo))
         p-end (+ p-start (:piece-length minfo))]
-    (filter (fn [{:keys [start end]}]
-              (< start end))
+    (filter (fn [{:keys [slice-start slice-end]}]
+              (< slice-start slice-end))
             (map (fn [f]
-                   {:path (:path f)
-                    :start (max p-start (:start f))
-                    :end (min p-end (:end f))})
+                   (let [start (max p-start (:start f))
+                         end (min p-end (:end f))]
+                     {:path (:path f)
+                      :slice-start (- start p-start)
+                      :slice-end (- end p-start)
+                      :seek (- start (:start f))}))
                  (:files minfo)))))
