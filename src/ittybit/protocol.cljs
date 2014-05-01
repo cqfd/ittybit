@@ -114,11 +114,11 @@
                (when-let [piece-index (<! (get-int in))]
                  [:have piece-index])
 
-               (and (= 5 id) (> length 1))
+               (and (= id 5) (> length 1))
                (when-let [bfield (<! (take-exactly (- length 1) in))]
                  [:bitfield bfield])
 
-               (and (= 6 id) (= length 13))
+               (and (= id 6) (= length 13))
                (when-let [piece-index (<! (get-int in))]
                  (when-let [piece-begin (<! (get-int in))]
                    (when-let [piece-length (<! (get-int in))]
