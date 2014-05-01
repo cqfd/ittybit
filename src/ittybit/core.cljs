@@ -43,12 +43,13 @@
                (loop []
                  (when-let [msg (<! (:inbox @p))]
                    (condp = (proto/msg->type msg)
-                     :unchoke (let [piece-idx (first (:free @state))]
-                                (swap! state (fn [{:keys [free taken]}]
-                                               {:free (vec (next free))
-                                                :taken (conj taken piece-idx)}))
-                                (doseq [req (minfo/piece->requests minfo piece-idx)]
-                                  (>! (:outbox @p) req)))
+                     :unchoke
+                     (let [piece-idx (first (:free @state))]
+                       (swap! state (fn [{:keys [free taken]}]
+                                      {:free (vec (next free))
+                                       :taken (conj taken piece-idx)}))
+                       (doseq [req (minfo/piece->requests minfo piece-idx)]
+                         (>! (:outbox @p) req)))
                      :piece
                      (let [[_ idx begin buf] msg]
                        (>! pw [idx buf])
