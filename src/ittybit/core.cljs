@@ -16,22 +16,13 @@
   (let [in (chan) fds (atom {})]
     (go (loop []
           (when-let [[piece-idx buf] (<! in)]
-            (println "trying to write" piece-idx)
             (let [ws (minfo/piece->writes minfo piece-idx)]
               (doseq [w ws]
                 (if-let [fd (@fds (:path w))]
-                  (<! (fs/write fd
-                                buf
-                                (:slice-start w)
-                                (- (:slice-end w) (:slice-start w))
-                                (:seek w)))
+                  (<! (fs/write fd buf (:offset w) (:length w) (:position w)))
                   (let [[_err fd] (<! (fs/open-sesame! (:path w)))]
                     (swap! fds assoc (:path w) fd)
-                    (<! (fs/write fd
-                                  buf
-                                  (:slice-start w)
-                                  (- (:slice-end w) (:slice-start w))
-                                  (:seek w)))))))
+                    (<! (fs/write fd buf (:offset w) (:length w) (:position w)))))))
             (recur))))
     in))
 
