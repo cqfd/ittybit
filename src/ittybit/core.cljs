@@ -18,11 +18,11 @@
           (when-let [[piece-idx buf] (<! in)]
             (let [ws (minfo/piece->writes minfo piece-idx)]
               (doseq [w ws]
-                (if-let [fd (@fds (:path w))]
-                  (<! (fs/write fd buf (:offset w) (:length w) (:position w)))
-                  (let [[_err fd] (<! (fs/open-sesame! (:path w)))]
-                    (swap! fds assoc (:path w) fd)
-                    (<! (fs/write fd buf (:offset w) (:length w) (:position w)))))))
+                (let [fd (or (@fds (:path w))
+                             (let [[_err fd] (<! (fs/open-sesame! (:path w)))]
+                               (swap! fds assoc (:path w) fd)
+                               fd))]
+                  (<! (fs/write fd buf (:offset w) (:length w) (:position w))))))
             (recur))))
     in))
 
