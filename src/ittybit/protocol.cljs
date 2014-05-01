@@ -138,4 +138,6 @@
 
                (and (= id 9) (= length 3))
                (when-let [port-buf (<! (take-exactly 2 in))]
-                 [:port (. port-buf (readUInt16BE 0))]))))))))
+                 [:port (. port-buf (readUInt16BE 0))])
+
+               :else nil)))))))
