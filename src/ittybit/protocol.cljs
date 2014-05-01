@@ -119,23 +119,23 @@
                  [:bitfield bfield])
 
                (and (= 6 id) (= length 13))
-               (when-let [piece-index (get-int in)]
-                 (when-let [piece-begin (get-int in)]
-                   (when-let [piece-length (get-int in)]
+               (when-let [piece-index (<! (get-int in))]
+                 (when-let [piece-begin (<! (get-int in))]
+                   (when-let [piece-length (<! (get-int in))]
                      [:request piece-index piece-begin piece-length])))
 
                (and (= id 7) (> length 9))
-               (when-let [piece-index (get-int in)]
-                 (when-let [piece-begin (get-int in)]
-                   (when-let [block (take-exactly (- length 9) in)]
+               (when-let [piece-index (<! (get-int in))]
+                 (when-let [piece-begin (<! (get-int in))]
+                   (when-let [block (<! (take-exactly (- length 9) in))]
                      [:piece piece-index piece-begin block])))
 
                (and (= id 8) (= length 13))
-               (when-let [piece-index (get-int in)]
-                 (when-let [piece-begin (get-int in)]
-                   (when-let [piece-length (get-int in)]
+               (when-let [piece-index (<! (get-int in))]
+                 (when-let [piece-begin (<! (get-int in))]
+                   (when-let [piece-length (<! (get-int in))]
                      [:cancel piece-index piece-begin piece-length])))
 
                (and (= id 9) (= length 3))
-               (when-let [port-buf (take-exactly 2 in)]
+               (when-let [port-buf (<! (take-exactly 2 in))]
                  [:port (. port-buf (readUInt16BE 0))]))))))))
