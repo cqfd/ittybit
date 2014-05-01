@@ -18,6 +18,7 @@
 (defn mkdir [path] (mkdir' (string/join "/" path)))
 (def open' (async-fn->chan-fn (aget fs "open")))
 (defn open [path flags] (open' (string/join "/" path) flags))
+(def write (async-fn->chan-fn (aget fs "write")))
 
 (defn mkdirp
   ([dirs] (mkdirp dirs []))
