@@ -72,19 +72,25 @@
 
 (def CHUNK-SIZE 16384)
 
+(defn piece->start [minfo piece-idx]
+  (* piece-idx (:piece-length minfo)))
+(defn piece->end [minfo piece-idx]
+  (min (dec (:length minfo))
+       (* (inc piece-idx) (:piece-length minfo))))
+
 (defn piece->requests
   "Calculate the requests necessary to download a particular piece."
-  [{:keys [length piece-length] :as minfo} piece-index]
-  (let [start (* piece-length piece-index)
-        end (min (dec length) (+ start piece-length))]
+  [{:keys [length piece-length] :as minfo} piece-idx]
+  (let [start (piece->start minfo piece-idx)
+        end (piece->end minfo piece-idx)]
     (map (fn [[offset chunk-size]]
-           [:request piece-index offset chunk-size])
+           [:request piece-idx offset chunk-size])
          (chunks (- end start) CHUNK-SIZE))))
 
 (defn piece->writes
   [minfo piece-idx]
-  (let [p-start (* piece-idx (:piece-length minfo))
-        p-end (+ p-start (:piece-length minfo))]
+  (let [p-start (piece->start minfo piece-idx)
+        p-end (piece->end minfo piece-idx)]
     (filter (fn [{:keys [slice-start slice-end]}]
               (< slice-start slice-end))
             (map (fn [f]
