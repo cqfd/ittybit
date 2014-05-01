@@ -16,11 +16,12 @@
     (. buf (writeUInt32BE i 0))
     buf))
 
+(def handshake-preamble (.concat B #js [(B. #js [19]) (B. "BitTorrent protocol")]))
+
 (defn msg->buf [msg]
   (match msg
     [:handshake info-hash peer-id]
-    (.concat B #js [(B. #js [19])
-                    (B. "BitTorrent protocol")
+    (.concat B #js [handshake-preamble
                     (B. #js [0 0 0 0 0 0 0 0])
                     info-hash
                     peer-id])
@@ -82,9 +83,7 @@
 
 (defn get-handshake
   [in]
-  (go (when (<! (literally (.concat B #js [(B. #js [19])
-                                           (B. "BitTorrent protocol")])
-                           in))
+  (go (when (<! (literally handshake-preamble in))
         (when-let [_reserved (<! (take-exactly 8 in))]
           (when-let [info-hash (<! (take-exactly 20 in))]
             (when-let [peer-id (<! (take-exactly 20 in))]
