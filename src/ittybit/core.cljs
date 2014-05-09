@@ -26,41 +26,53 @@
             (recur))))
     in))
 
+(def t (atom {}))
+
+(defn cross-off [idx]
+  (swap! t update-in [:remaining] (partial remove #(= % idx))))
+
+(declare choked)
+(declare requesting)
+(declare receiving)
+
+(defn choked [p]
+  (go (>! (:outbox @p) :interested)
+      (loop []
+        (when-let [msg (<! (:inbox @p))]
+          (condp = (proto/msg->type msg)
+            :unchoke (requesting p)
+            (do (println "(choked) ignoring" msg)
+                (recur)))))))
+
+(defn requesting [p]
+  (go (let [lucky-piece (rand-nth (:remaining @t))]
+        (doseq [r (minfo/piece->requests (:minfo @t) lucky-piece)]
+          (>! (:outbox @p) r)))
+      (receiving p)))
+
+(defn receiving [p]
+  (go (when-let [msg (<! (:inbox @p))]
+        (condp = (proto/msg->type msg)
+          :piece (let [[_ idx begin buf] msg]
+                   (cross-off idx)
+                   (>! (:disk @t) [idx buf])
+                   (requesting p))
+          :choke (choked p)
+          (do (println "(receiving) ignoring" msg)
+              (recur))))))
+
 (defn main [torrent-path]
   (go (let [[_err, minfo-buf] (<! (fs/read-file torrent-path))
             minfo (minfo/parse minfo-buf)
-            pw (piece-writer minfo)
+            disk (piece-writer minfo)
             info-hash (:info-hash minfo)
-            hosts-and-ports (tracker/peers! (:trackers minfo) info-hash)
-            state (atom {:free (vec (range (minfo/num-pieces minfo)))
-                         :taken []})]
-        (println (:piece-length minfo))
+            hosts-and-ports (tracker/peers! (:trackers minfo) info-hash)]
+        (reset! t {:minfo minfo
+                   :remaining (vec (range (minfo/num-pieces minfo)))
+                   :disk disk})
         (dotimes [_ 20]
-          (go
-           (when-let [[host port] (<! hosts-and-ports)]
-             (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
-               (>! (:outbox @p) :interested)
-               (loop []
-                 (when-let [msg (<! (:inbox @p))]
-                   (condp = (proto/msg->type msg)
-                     :unchoke
-                     (let [piece-idx (first (:free @state))]
-                       (swap! state (fn [{:keys [free taken]}]
-                                      {:free (vec (next free))
-                                       :taken (conj taken piece-idx)}))
-                       (doseq [req (minfo/piece->requests minfo piece-idx)]
-                         (>! (:outbox @p) req)))
-                     :piece
-                     (let [[_ idx begin buf] msg]
-                       (>! pw [idx buf])
-                       (let [piece-idx (first (:free @state))]
-                         (swap! state (fn [{:keys [free taken]}]
-                                        {:free (vec (next free))
-                                         :taken (conj taken piece-idx)}))
-                         (doseq [req (minfo/piece->requests minfo piece-idx)]
-                           (>! (:outbox @p) req))))
-
-                     (println "ignoring" msg))
-                   (recur))))))))))
+          (go (when-let [[host port] (<! hosts-and-ports)]
+                (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
+                  (choked p))))))))
 
 (set! *main-cli-fn* main)
