@@ -45,10 +45,12 @@
                 (recur)))))))
 
 (defn requesting [p]
-  (go (let [lucky-piece (rand-nth (:remaining @t))]
-        (doseq [r (minfo/piece->requests (:minfo @t) lucky-piece)]
-          (>! (:outbox @p) r)))
-      (receiving p)))
+  (go (if (empty? (:remaining @t))
+        (println "all done!")
+        (let [lucky-piece (rand-nth (:remaining @t))]
+          (doseq [r (minfo/piece->requests (:minfo @t) lucky-piece)]
+            (>! (:outbox @p) r))
+          (receiving p)))))
 
 (defn receiving [p]
   (go (when-let [msg (<! (:inbox @p))]
