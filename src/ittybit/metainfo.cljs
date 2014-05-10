@@ -1,12 +1,9 @@
 (ns ittybit.metainfo
-  (:require [cljs.nodejs :as n]))
+  (:require [cljs.nodejs :as n]
+            [ittybit.utils :refer [sha1]]))
 
 (def b (n/require "bncode"))
-(def crypto (n/require "crypto"))
 (def url (n/require "url"))
-
-(defn sha1 [stuff]
-  (.. crypto (createHash "sha1") (update stuff) digest))
 
 (defn trackers [decoded]
   (let [announce (aget decoded "announce")
