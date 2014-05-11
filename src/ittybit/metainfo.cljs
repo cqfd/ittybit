@@ -56,7 +56,7 @@
 
 (defn piece-hash
   [{:keys [piece-hashes] :as minfo} piece-index]
-  (. piece-hashes (slice (* 20 piece-index) (* 21 piece-index))))
+  (. piece-hashes (slice (* piece-index 20) (* (inc piece-index) 20))))
 
 (defn chunks [length chunk-size]
   (loop [offset 0 acc []]
