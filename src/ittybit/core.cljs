@@ -51,22 +51,29 @@
 (defn requesting [p]
   (go (if (empty? (:remaining @t))
         (println "all done!")
-        (let [lucky-piece (rand-nth (:remaining @t))]
-          (doseq [r (minfo/piece->requests (:minfo @t) lucky-piece)]
+        (let [lucky-piece (rand-nth (:remaining @t))
+              pbuf (js/Buffer. (minfo/piece->length (:minfo @t) lucky-piece))
+              reqs (minfo/piece->requests (:minfo @t) lucky-piece)]
+          (doseq [r reqs]
             (>! (:outbox @p) r))
-          (receiving p)))))
+          (receiving p lucky-piece pbuf (set reqs))))))
 
-(defn receiving [p]
-  (go (when-let [msg (<! (:inbox @p))]
-        (condp = (proto/msg->type msg)
-          :piece (let [[_ idx begin buf] msg]
-                   (when (legit? idx buf)
-                     (cross-off idx)
-                     (>! (:disk @t) [idx buf]))
-                   (requesting p))
-          :choke (choked p)
-          (do (println "(receiving) ignoring" msg)
-              (recur))))))
+(defn receiving [p idx pbuf outstanding]
+  (go (if (empty? outstanding)
+        (do (when (legit? idx pbuf)
+              (cross-off idx)
+              (>! (:disk @t) [idx pbuf]))
+            (requesting p))
+        (when-let [msg (<! (:inbox @p))]
+          (condp = (proto/msg->type msg)
+            :piece (let [[_ idx begin chunk] msg
+                         corresponding-req [:request idx begin (.-length chunk)]
+                         outstanding' (disj outstanding corresponding-req)]
+                     (. chunk (copy pbuf begin))
+                     (receiving p idx pbuf outstanding'))
+            :choke (choked p)
+            (do (println "(receiving) ignoring" msg)
+                (receiving p idx pbuf outstanding)))))))
 
 (defn main [torrent-path]
   (go (let [[_err, minfo-buf] (<! (fs/read-file torrent-path))
