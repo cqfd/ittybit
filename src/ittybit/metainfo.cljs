@@ -60,9 +60,13 @@
 
 (defn piece->start [minfo piece-idx]
   (* piece-idx (:piece-length minfo)))
+
 (defn piece->end [minfo piece-idx]
   (min (:length minfo)
        (* (inc piece-idx) (:piece-length minfo))))
+
+(defn piece->length [minfo piece-idx]
+  (- (piece->end minfo piece-idx) (piece->start minfo piece-idx)))
 
 (defn chunks [length chunk-size]
   (loop [offset 0 acc []]
