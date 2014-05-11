@@ -58,6 +58,12 @@
   [{:keys [piece-hashes] :as minfo} piece-index]
   (. piece-hashes (slice (* piece-index 20) (* (inc piece-index) 20))))
 
+(defn piece->start [minfo piece-idx]
+  (* piece-idx (:piece-length minfo)))
+(defn piece->end [minfo piece-idx]
+  (min (:length minfo)
+       (* (inc piece-idx) (:piece-length minfo))))
+
 (defn chunks [length chunk-size]
   (loop [offset 0 acc []]
     (if (>= (+ offset chunk-size) length)
@@ -68,12 +74,6 @@
 (assert (= (chunks 20 5) [[0 5] [5 5] [10 5] [15 5]]))
 
 (def CHUNK-SIZE 16384)
-
-(defn piece->start [minfo piece-idx]
-  (* piece-idx (:piece-length minfo)))
-(defn piece->end [minfo piece-idx]
-  (min (:length minfo)
-       (* (inc piece-idx) (:piece-length minfo))))
 
 (defn piece->requests
   "Calculate the requests necessary to download a particular piece."
