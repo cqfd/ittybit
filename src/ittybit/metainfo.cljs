@@ -72,7 +72,7 @@
 (defn piece->start [minfo piece-idx]
   (* piece-idx (:piece-length minfo)))
 (defn piece->end [minfo piece-idx]
-  (min (dec (:length minfo))
+  (min (:length minfo)
        (* (inc piece-idx) (:piece-length minfo))))
 
 (defn piece->requests
