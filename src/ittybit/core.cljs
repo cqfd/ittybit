@@ -6,7 +6,8 @@
             [ittybit.metainfo :as minfo]
             [ittybit.peer :as peer]
             [ittybit.protocol :as proto]
-            [ittybit.tracker :as tracker]))
+            [ittybit.tracker :as tracker]
+            [ittybit.utils :refer [sha1]]))
 
 (n/enable-util-print!)
 
@@ -30,6 +31,9 @@
 
 (defn cross-off [idx]
   (swap! t update-in [:remaining] (partial remove #(= % idx))))
+
+(defn legit? [idx buf]
+  (= (sha1 buf) (minfo/piece->hash (:minfo @t) idx)))
 
 (declare choked)
 (declare requesting)
@@ -56,8 +60,9 @@
   (go (when-let [msg (<! (:inbox @p))]
         (condp = (proto/msg->type msg)
           :piece (let [[_ idx begin buf] msg]
-                   (cross-off idx)
-                   (>! (:disk @t) [idx buf])
+                   (when (legit? idx buf)
+                     (cross-off idx)
+                     (>! (:disk @t) [idx buf]))
                    (requesting p))
           :choke (choked p)
           (do (println "(receiving) ignoring" msg)

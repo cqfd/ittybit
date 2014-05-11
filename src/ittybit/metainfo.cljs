@@ -54,7 +54,7 @@
   [{:keys [piece-hashes] :as minfo}]
   (/ (.-length piece-hashes) 20))
 
-(defn piece-hash
+(defn piece->hash
   [{:keys [piece-hashes] :as minfo} piece-index]
   (. piece-hashes (slice (* piece-index 20) (* (inc piece-index) 20))))
 
