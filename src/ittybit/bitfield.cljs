@@ -65,3 +65,30 @@
     (let [bf'' (disj bf' 0)]
       (assert (= 0 (bf' 0)))
       (assert (nil? (bf'' 1))))))
+
+(defn bytewise [op bf bf']
+  {:pre [(= (.-size bf) (.-size bf'))]}
+  (let [buf (js/Buffer. (.-length (.-buf bf)))]
+    (dotimes [i (.-length (.-buf bf))]
+      (aset buf i (op (aget (.-buf bf) i)
+                      (aget (.-buf bf') i))))
+    (Bitfield. (.-size bf) buf)))
+
+(def union (partial bytewise bit-or))
+(def intersection (partial bytewise bit-and))
+(defn difference [bf bf']
+  (bytewise (fn [b b']
+              (bit-and b (bit-not b')))
+            bf bf'))
+
+(let [bf (conj (of-size 256) 0)
+      bf' (conj (of-size 256) 1)]
+  (assert (contains? bf 0))
+  (assert (contains? bf' 1))
+  (assert (contains? (union bf bf') 0))
+  (assert (contains? (union bf bf') 1)))
+
+(let [bf (into (of-size 1234) [1 2 3])
+      bf' (into (of-size 1234) [2 3 4])]
+  (assert (= [1] (into [] (difference bf bf')))
+          "difference works"))
