@@ -1,6 +1,21 @@
 (ns ittybit.bitfield)
 
-(deftype Bitfield [buf]
+(deftype IndexedBitfield [bf i]
+  ISeq
+  (-first [this]
+    (when (< i (.-size bf))
+      i))
+  (-rest [this]
+    (loop [i (inc i)]
+      (if (= i (.-size bf))
+        nil
+        (if (bf i)
+          (IndexedBitfield. bf i)
+          (recur (inc i)))))))
+
+(defn indexed-bitfield [bf]
+  (rest (IndexedBitfield. bf -1)))
+
 (deftype Bitfield [size buf]
   ICollection
   (-conj [this i]
@@ -29,6 +44,9 @@
       (. buf (copy buf'))
       (aset buf' (bit-shift-right i 3) new-byte)
       (Bitfield. size buf')))
+  ISeqable
+  (-seq [this]
+    (indexed-bitfield this))
   IFn
   (-invoke [this i]
     (-lookup this i))
