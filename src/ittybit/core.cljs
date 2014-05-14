@@ -88,6 +88,10 @@
                    :remaining (vec (range (minfo/num-pieces minfo)))
                    :disk disk
                    :peers {}})
+        (add-watch t :status-update
+                   (fn [k r o n]
+                     (println {:peer-count (count (:peers n))
+                               :pieces-remaining (count (:remaining n))})))
         (dotimes [_ 20]
           (go (when-let [[host port] (<! hosts-and-ports)]
                 (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
