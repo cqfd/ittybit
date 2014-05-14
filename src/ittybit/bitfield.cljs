@@ -39,6 +39,10 @@
     (let [buf' (-copy buf)]
       (-set buf' i)
       (Bitfield. size buf')))
+  IEditableCollection
+  (-as-transient [this]
+    (let [buf' (-copy buf)]
+      (Bitfield. size buf')))
   IFn
   (-invoke [this i]
     (-lookup this i))
@@ -60,7 +64,17 @@
   (-disjoin [this i]
     (let [buf' (-copy buf)]
       (-unset buf' i)
-      (Bitfield. size buf'))))
+      (Bitfield. size buf')))
+  ITransientCollection
+  (-conj! [this i]
+    (-set buf i)
+    this)
+  (-persistent! [this]
+    this)
+  ITransientSet
+  (-disjoin! [this i]
+    (-unset buf i)
+    this))
 
 (defn of-size [size]
   (let [buf (js/Buffer. (js/Array. (+ 1 (bit-shift-right size 3))))]
@@ -99,4 +113,4 @@
 
 (let [bf (into (of-size 1234) [1 2 3])
       bf' (into (of-size 1234) [2 3 4])]
-  (assert (= [1] (into [] (difference bf bf')))))
+  (assert (= [1] (vec (difference bf bf')))))
