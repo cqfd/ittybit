@@ -35,9 +35,7 @@
 (defn legit? [idx buf]
   (= (sha1 buf) (minfo/piece->hash (:minfo @t) idx)))
 
-(declare choked)
-(declare requesting)
-(declare receiving)
+(declare choked requesting receiving)
 
 (defn choked [p]
   (go (>! (:outbox p) :interested)
