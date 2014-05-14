@@ -90,5 +90,4 @@
 
 (let [bf (into (of-size 1234) [1 2 3])
       bf' (into (of-size 1234) [2 3 4])]
-  (assert (= [1] (into [] (difference bf bf')))
-          "difference works"))
+  (assert (= [1] (into [] (difference bf bf')))))
