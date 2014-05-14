@@ -26,6 +26,11 @@
       (. buf (copy buf'))
       (aset buf' (bit-shift-right i 3) new-byte)
       (Bitfield. size buf')))
+  IFn
+  (-invoke [this i]
+    (-lookup this i))
+  (-invoke [this i not-found]
+    (-lookup this i not-found))
   ILookup
   (-lookup [this i]
     (-lookup this i nil))
@@ -35,6 +40,9 @@
       (if-not (zero? (bit-and mask the-byte))
         i
         not-found)))
+  ISeqable
+  (-seq [this]
+    (indexed-bitfield this))
   ISet
   (-disjoin [this i]
     (let [mask (bit-not (bit-shift-right 2r10000000 (rem i 8)))
@@ -43,15 +51,7 @@
           buf' (js/Buffer. (.-length buf))]
       (. buf (copy buf'))
       (aset buf' (bit-shift-right i 3) new-byte)
-      (Bitfield. size buf')))
-  ISeqable
-  (-seq [this]
-    (indexed-bitfield this))
-  IFn
-  (-invoke [this i]
-    (-lookup this i))
-  (-invoke [this i not-found]
-    (-lookup this i not-found)))
+      (Bitfield. size buf'))))
 
 (defn of-size [size]
   (let [buf (js/Buffer. (js/Array. (+ 1 (bit-shift-right size 3))))]
