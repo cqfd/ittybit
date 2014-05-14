@@ -15,16 +15,18 @@
 
 (defn piece-writer [minfo]
   (let [in (chan) fds (atom {})]
-    (go (loop []
+    (go (loop [already-written? #{}]
           (when-let [[piece-idx buf] (<! in)]
-            (let [ws (minfo/piece->writes minfo piece-idx)]
-              (doseq [w ws]
-                (let [fd (or (@fds (:path w))
-                             (let [[_err fd] (<! (fs/open-sesame! (:path w)))]
-                               (swap! fds assoc (:path w) fd)
-                               fd))]
-                  (<! (fs/write fd buf (:offset w) (:length w) (:position w))))))
-            (recur))))
+            (if (already-written? piece-idx)
+              (recur already-written?)
+              (let [ws (minfo/piece->writes minfo piece-idx)]
+                (doseq [w ws]
+                  (let [fd (or (@fds (:path w))
+                               (let [[_err fd] (<! (fs/open-sesame! (:path w)))]
+                                 (swap! fds assoc (:path w) fd)
+                                 fd))]
+                    (<! (fs/write fd buf (:offset w) (:length w) (:position w)))))
+                (recur (conj already-written? piece-idx)))))))
     in))
 
 (def t (atom {}))
