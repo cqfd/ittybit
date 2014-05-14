@@ -81,10 +81,12 @@
             hosts-and-ports (tracker/peers! (:trackers minfo) info-hash)]
         (reset! t {:minfo minfo
                    :remaining (vec (range (minfo/num-pieces minfo)))
-                   :disk disk})
+                   :disk disk
+                   :peers {}})
         (dotimes [_ 20]
           (go (when-let [[host port] (<! hosts-and-ports)]
                 (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
+                  (swap! t update-in [:peers] assoc (:peer-id p) p)
                   (choked p))))))))
 
 (set! *main-cli-fn* main)
