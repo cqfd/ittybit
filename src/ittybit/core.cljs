@@ -35,20 +35,21 @@
 (defn legit? [idx buf]
   (= (sha1 buf) (minfo/piece->hash (:minfo @t) idx)))
 
-(declare choked requesting receiving)
+(declare choked requesting receiving cleaning-up)
 
 (defn choked [p]
   (go (>! (:outbox p) :interested)
       (loop []
-        (when-let [msg (<! (:inbox p))]
+        (if-let [msg (<! (:inbox p))]
           (condp = (proto/msg->type msg)
             :unchoke (requesting p)
             (do (println "(choked) ignoring" msg)
-                (recur)))))))
+                (recur)))
+          (cleaning-up p)))))
 
 (defn requesting [p]
   (go (if (empty? (:remaining @t))
-        (println "all done!")
+        (cleaning-up p)
         (let [lucky-piece (rand-nth (:remaining @t))
               pbuf (js/Buffer. (minfo/piece->length (:minfo @t) lucky-piece))
               reqs (minfo/piece->requests (:minfo @t) lucky-piece)]
@@ -62,7 +63,7 @@
               (cross-off idx)
               (>! (:disk @t) [idx pbuf]))
             (requesting p))
-        (when-let [msg (<! (:inbox p))]
+        (if-let [msg (<! (:inbox p))]
           (condp = (proto/msg->type msg)
             :piece (let [[_ idx begin chunk] msg
                          corresponding-req [:request idx begin (.-length chunk)]
@@ -71,7 +72,11 @@
                      (receiving p idx pbuf outstanding'))
             :choke (choked p)
             (do (println "(receiving) ignoring" msg)
-                (receiving p idx pbuf outstanding)))))))
+                (receiving p idx pbuf outstanding)))
+          (cleaning-up p)))))
+
+(defn cleaning-up [p]
+  (swap! t update-in [:peers] dissoc (:peer-id p)))
 
 (defn main [torrent-path]
   (go (let [[_err, minfo-buf] (<! (fs/read-file torrent-path))
