@@ -20,9 +20,12 @@
 (deftype IndexedBitfield [bf i]
   ISeq
   (-first [this]
-    (when (< i (.-size bf))
-      i))
+    ;; invariant: the i in an (IndexedBitfield. bf i) must be set in
+    ;; bf.
+    (assert (= i (bf i)))
+    i)
   (-rest [this]
+    ;; preserve the invariant by finding the next index set in bf.
     (loop [i (inc i)]
       (if (= i (.-size bf))
         nil
