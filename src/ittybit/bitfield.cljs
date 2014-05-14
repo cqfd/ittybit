@@ -1,5 +1,10 @@
 (ns ittybit.bitfield)
 
+(defn -copy [buf]
+  (let [buf' (js/Buffer. (.-length buf))]
+    (. buf (copy buf'))
+    buf'))
+
 (deftype IndexedBitfield [bf i]
   ISeq
   (-first [this]
@@ -22,8 +27,7 @@
     (let [mask (bit-shift-right 2r10000000 (rem i 8))
           old-byte (aget buf (bit-shift-right i 3))
           new-byte (bit-or mask old-byte)
-          buf' (js/Buffer. (.-length buf))]
-      (. buf (copy buf'))
+          buf' (-copy buf)]
       (aset buf' (bit-shift-right i 3) new-byte)
       (Bitfield. size buf')))
   IFn
@@ -48,8 +52,7 @@
     (let [mask (bit-not (bit-shift-right 2r10000000 (rem i 8)))
           old-byte (aget buf (bit-shift-right i 3))
           new-byte (bit-and mask old-byte)
-          buf' (js/Buffer. (.-length buf))]
-      (. buf (copy buf'))
+          buf' (-copy buf)]
       (aset buf' (bit-shift-right i 3) new-byte)
       (Bitfield. size buf'))))
 
