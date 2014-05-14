@@ -5,6 +5,18 @@
     (. buf (copy buf'))
     buf'))
 
+(defn -set [buf i]
+  (let [mask (bit-shift-right 2r10000000 (rem i 8))
+        old-byte (aget buf (bit-shift-right i 3))
+        new-byte (bit-or mask old-byte)]
+    (aset buf (bit-shift-right i 3) new-byte)))
+
+(defn -unset [buf i]
+  (let [mask (bit-not (bit-shift-right 2r10000000 (rem i 8)))
+        old-byte (aget buf (bit-shift-right i 3))
+        new-byte (bit-and mask old-byte)]
+    (aset buf (bit-shift-right i 3) new-byte)))
+
 (deftype IndexedBitfield [bf i]
   ISeq
   (-first [this]
@@ -24,11 +36,8 @@
 (deftype Bitfield [size buf]
   ICollection
   (-conj [this i]
-    (let [mask (bit-shift-right 2r10000000 (rem i 8))
-          old-byte (aget buf (bit-shift-right i 3))
-          new-byte (bit-or mask old-byte)
-          buf' (-copy buf)]
-      (aset buf' (bit-shift-right i 3) new-byte)
+    (let [buf' (-copy buf)]
+      (-set buf' i)
       (Bitfield. size buf')))
   IFn
   (-invoke [this i]
@@ -49,11 +58,8 @@
     (indexed-bitfield this))
   ISet
   (-disjoin [this i]
-    (let [mask (bit-not (bit-shift-right 2r10000000 (rem i 8)))
-          old-byte (aget buf (bit-shift-right i 3))
-          new-byte (bit-and mask old-byte)
-          buf' (-copy buf)]
-      (aset buf' (bit-shift-right i 3) new-byte)
+    (let [buf' (-copy buf)]
+      (-unset buf' i)
       (Bitfield. size buf'))))
 
 (defn of-size [size]
