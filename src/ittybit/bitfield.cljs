@@ -46,6 +46,10 @@
   (-as-transient [this]
     (let [buf' (-copy buf)]
       (Bitfield. size buf')))
+  IEquiv
+  (-equiv [this that]
+    (and (set? that)
+         (every? #(contains? this %) that)))
   IFn
   (-invoke [this i]
     (-lookup this i))
@@ -82,6 +86,10 @@
 (defn of-size [size]
   (let [buf (js/Buffer. (js/Array. (+ 1 (bit-shift-right size 3))))]
     (Bitfield. size buf)))
+
+(let [bf (of-size 1024)]
+  (assert (= #{} bf))
+  (assert (= #{1} (conj bf 1))))
 
 (let [bf (of-size 1)]
   (assert (not (get bf 0)))
