@@ -31,7 +31,7 @@
 
 (def t (atom {}))
 
-(defn cross-off [idx]
+(defn cross-off! [idx]
   (swap! t update-in [:remaining] (partial remove #(= % idx))))
 
 (defn legit? [idx buf]
@@ -62,7 +62,7 @@
 (defn receiving [p idx pbuf outstanding]
   (go (if (empty? outstanding)
         (do (when (legit? idx pbuf)
-              (cross-off idx)
+              (cross-off! idx)
               (>! (:disk @t) [idx pbuf]))
             (requesting p))
         (if-let [msg (<! (:inbox p))]
