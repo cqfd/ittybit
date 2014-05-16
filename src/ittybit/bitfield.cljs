@@ -91,7 +91,9 @@
 
 (let [bf (of-size 1024)]
   (assert (= #{} bf))
-  (assert (= #{1} (conj bf 1))))
+  (assert (= #{1} (conj bf 1)))
+  (assert (= #{1} (into bf [1])))
+  (assert (= #{1 2} (into bf [1 2]))))
 
 (let [bf (of-size 1)]
   (assert (not (get bf 0)))
