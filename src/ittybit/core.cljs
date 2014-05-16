@@ -117,6 +117,7 @@
           (go (when-let [[host port] (<! hosts-and-ports)]
                 (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
                   (swap! t update-in [:peers] assoc (:peer-id p) p)
+                  (>! (:outbox p) [:bitfield (.-buf (:bitfield @t))])
                   (choked p))))))))
 
 (set! *main-cli-fn* main)
