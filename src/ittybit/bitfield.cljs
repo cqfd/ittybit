@@ -146,6 +146,13 @@
               (bit-and b (bit-not b')))
             bf bf'))
 
+(defn full? [bf]
+  (= (count bf) (.-size bf)))
+
+(let [bf (into (of-size 8) (range 7))]
+  (assert (not (full? bf)))
+  (assert (full? (conj bf 7))))
+
 (let [bf (conj (of-size 256) 0)
       bf' (conj (of-size 256) 1)]
   (assert (contains? bf 0))
