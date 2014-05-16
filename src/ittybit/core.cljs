@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [alt! go]])
   (:require [cljs.nodejs :as n]
             [cljs.core.async :refer [<! chan close! put! take!]]
+            [ittybit.bitfield :as bf]
             [ittybit.fs :as fs]
             [ittybit.metainfo :as minfo]
             [ittybit.peer :as peer]
@@ -37,6 +38,10 @@
 (defn legit? [idx buf]
   (= (sha1 buf) (minfo/piece->hash (:minfo @t) idx)))
 
+(defn bitfield [buf]
+  (let [size (minfo/num-pieces (:minfo @t))]
+    (bf/Bitfield. size buf)))
+
 (declare choked requesting receiving cleaning-up)
 
 (defn choked [p]
@@ -45,6 +50,13 @@
         (if-let [msg (<! (:inbox p))]
           (condp = (proto/msg->type msg)
             :unchoke (requesting p)
+            :bitfield (let [[_ buf] msg
+                            bf (bitfield buf)]
+                        (swap! t update-in [:peers (:peer-id p)] assoc :bitfield bf)
+                        (recur))
+            :have (let [[_ idx] msg]
+                    (swap! t update-in [:peers (:peer-id p) :bitfield] conj idx)
+                    (recur))
             (do (println "(choked) ignoring" msg)
                 (recur)))
           (cleaning-up p)))))
@@ -73,6 +85,9 @@
                      (. chunk (copy pbuf begin))
                      (receiving p idx pbuf outstanding'))
             :choke (choked p)
+            :have (let [[_ idx] msg]
+                    (swap! t update-in [:peers (:peer-id p) :bitfield] conj idx)
+                    (receiving p idx pbuf outstanding))
             (do (println "(receiving) ignoring" msg)
                 (receiving p idx pbuf outstanding)))
           (cleaning-up p)))))
@@ -92,8 +107,12 @@
                    :peers {}})
         (add-watch t :status-update
                    (fn [k r o n]
-                     (println {:peer-count (count (:peers n))
-                               :pieces-remaining (count (:remaining n))})))
+                     (let [peers (vals (:peers n))]
+                       (println {:peer-count (count peers)
+                                 :pieces-remaining (count (:remaining n))
+                                 :bitfields (map (fn [p]
+                                                   (vec (:bitfield p)))
+                                                 peers)}))))
         (dotimes [_ 20]
           (go (when-let [[host port] (<! hosts-and-ports)]
                 (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
