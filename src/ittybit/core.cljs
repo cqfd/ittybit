@@ -20,13 +20,13 @@
           (when-let [[piece-idx buf] (<! in)]
             (if (already-written? piece-idx)
               (recur already-written?)
-              (let [ws (minfo/piece->writes minfo piece-idx)]
-                (doseq [w ws]
-                  (let [fd (or (@fds (:path w))
-                               (let [[_err fd] (<! (fs/open-sesame! (:path w)))]
-                                 (swap! fds assoc (:path w) fd)
+              (let [bs (minfo/piece->io-boundaries minfo piece-idx)]
+                (doseq [b bs]
+                  (let [fd (or (@fds (:path b))
+                               (let [[_err fd] (<! (fs/open-sesame! (:path b)))]
+                                 (swap! fds assoc (:path b) fd)
                                  fd))]
-                    (<! (fs/write fd buf (:offset w) (:length w) (:position w)))))
+                    (<! (fs/write fd buf (:offset b) (:length b) (:position b)))))
                 (recur (conj already-written? piece-idx)))))))
     in))
 

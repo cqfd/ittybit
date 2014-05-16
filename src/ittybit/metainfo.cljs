@@ -88,7 +88,7 @@
            [:request piece-idx offset chunk-size])
          (chunks (- end start) CHUNK-SIZE))))
 
-(defn piece->writes
+(defn piece->io-boundaries
   [minfo piece-idx]
   (let [p-start (piece->start minfo piece-idx)
         p-end (piece->end minfo piece-idx)]
