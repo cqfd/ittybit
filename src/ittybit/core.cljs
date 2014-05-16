@@ -33,7 +33,7 @@
 (def t (atom {}))
 
 (defn cross-off! [idx]
-  (swap! t update-in [:remaining] (partial remove #(= % idx))))
+  (swap! t update-in [:bitfield] conj idx))
 
 (defn legit? [idx buf]
   (= (sha1 buf) (minfo/piece->hash (:minfo @t) idx)))
@@ -62,7 +62,7 @@
           (cleaning-up p)))))
 
 (defn requesting [p]
-  (go (if (empty? (:remaining @t))
+  (go (if (bf/full? (:bitfield @t))
         (cleaning-up p)
         (let [lucky-piece (rand-nth (:remaining @t))
               pbuf (js/Buffer. (minfo/piece->length (:minfo @t) lucky-piece))
@@ -102,17 +102,15 @@
             info-hash (:info-hash minfo)
             hosts-and-ports (tracker/peers! (:trackers minfo) info-hash)]
         (reset! t {:minfo minfo
-                   :remaining (vec (range (minfo/num-pieces minfo)))
+                   :bitfield (bf/of-size (minfo/num-pieces minfo))
                    :disk disk
                    :peers {}})
         (add-watch t :status-update
                    (fn [k r o n]
-                     (let [peers (vals (:peers n))]
+                     (let [peers (vals (:peers n))
+                           num-pieces (minfo/num-pieces (:minfo n))]
                        (println {:peer-count (count peers)
-                                 :pieces-remaining (count (:remaining n))
-                                 :bitfields (map (fn [p]
-                                                   (vec (:bitfield p)))
-                                                 peers)}))))
+                                 :pieces-remaining (- num-pieces (count (:bitfield n)))}))))
         (dotimes [_ 20]
           (go (when-let [[host port] (<! hosts-and-ports)]
                 (when-let [p (<! (peer/start! host port info-hash our-peer-id))]
