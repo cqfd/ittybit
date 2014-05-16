@@ -18,6 +18,8 @@
     (aset buf (bit-shift-right i 3) new-byte)))
 
 (deftype IndexedBitfield [bf i]
+  ISeqable
+  (-seq [this] this)
   ISeq
   (-first [this]
     ;; invariant: the i in an (IndexedBitfield. bf i) must be set in
