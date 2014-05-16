@@ -23,6 +23,14 @@
           true)
       false)))
 
+(defn -empty? [buf]
+  (loop [i 0]
+    (if (= i (.-length buf))
+      true
+      (if (zero? (aget buf i))
+        (recur (inc i))
+        false))))
+
 (deftype IndexedBitfield [bf i]
   ISeqable
   (-seq [this] this)
@@ -71,7 +79,8 @@
         not-found)))
   ISeqable
   (-seq [this]
-    (indexed-bitfield this))
+    (when-not (-empty? buf)
+      (indexed-bitfield this)))
   ISet
   (-disjoin [this i]
     (let [buf' (-copy buf)]
