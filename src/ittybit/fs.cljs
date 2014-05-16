@@ -14,6 +14,7 @@
       c)))
 
 (def read-file (async-fn->chan-fn (aget fs "readFile")))
+(def read (async-fn->chan-fn (aget fs "read")))
 (def mkdir' (async-fn->chan-fn (aget fs "mkdir")))
 (defn mkdir [path] (mkdir' (string/join "/" path)))
 (def open' (async-fn->chan-fn (aget fs "open")))
