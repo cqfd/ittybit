@@ -40,6 +40,7 @@
                     (int->buf idx)])
     [:bitfield bfield]
     (.concat B #js [(int->buf (+ 1 (.-length bfield)))
+                    (B. #js [5])
                     bfield])
     [:request idx begin length]
     (.concat B #js [(B. #js [0 0 0 13 6])
