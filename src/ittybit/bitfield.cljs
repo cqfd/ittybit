@@ -49,6 +49,27 @@
 (defn indexed-bitfield [bf]
   (rest (IndexedBitfield. bf -1)))
 
+(declare Bitfield)
+
+(deftype TransientBitfield [size buf ^:mutable editable?]
+  ITransientCollection
+  (-conj! [this i]
+    (when-not editable?
+      (throw (js/Error. "conj! after persistent!")))
+    (-set buf i)
+    this)
+  (-persistent! [this]
+    (when-not editable?
+      (throw (js/Error. "persistent! called twice")))
+    (set! editable? false)
+    (Bitfield. size buf))
+  ITransientSet
+  (-disjoin! [this i]
+    (when-not editable?
+      (throw (js/Error. "disjoin! afer persistent!")))
+    (-unset buf i)
+    this))
+
 (deftype Bitfield [size buf]
   ICollection
   (-conj [this i]
@@ -58,7 +79,7 @@
   IEditableCollection
   (-as-transient [this]
     (let [buf' (-copy buf)]
-      (Bitfield. size buf')))
+      (TransientBitfield. size buf' true)))
   IEquiv
   (-equiv [this that]
     (and (set? that)
@@ -85,17 +106,7 @@
   (-disjoin [this i]
     (let [buf' (-copy buf)]
       (-unset buf' i)
-      (Bitfield. size buf')))
-  ITransientCollection
-  (-conj! [this i]
-    (-set buf i)
-    this)
-  (-persistent! [this]
-    this)
-  ITransientSet
-  (-disjoin! [this i]
-    (-unset buf i)
-    this))
+      (Bitfield. size buf'))))
 
 (defn of-size [size]
   (let [buf (js/Buffer. (js/Array. (+ 1 (bit-shift-right size 3))))]
