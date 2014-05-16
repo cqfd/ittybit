@@ -73,9 +73,11 @@
 (deftype Bitfield [size buf]
   ICollection
   (-conj [this i]
-    (let [buf' (-copy buf)]
-      (-set buf' i)
-      (Bitfield. size buf')))
+    (if (contains? this i)
+      this
+      (let [buf' (-copy buf)]
+        (-set buf' i)
+        (Bitfield. size buf'))))
   IEditableCollection
   (-as-transient [this]
     (let [buf' (-copy buf)]
@@ -104,9 +106,11 @@
       (indexed-bitfield this)))
   ISet
   (-disjoin [this i]
-    (let [buf' (-copy buf)]
-      (-unset buf' i)
-      (Bitfield. size buf'))))
+    (if-not (contains? this i)
+      this
+      (let [buf' (-copy buf)]
+        (-unset buf' i)
+        (Bitfield. size buf')))))
 
 (defn of-size [size]
   (let [buf (js/Buffer. (js/Array. (+ 1 (bit-shift-right size 3))))]
