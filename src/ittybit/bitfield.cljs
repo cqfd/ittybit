@@ -9,13 +9,19 @@
   (let [mask (bit-shift-right 2r10000000 (rem i 8))
         old-byte (aget buf (bit-shift-right i 3))
         new-byte (bit-or mask old-byte)]
-    (aset buf (bit-shift-right i 3) new-byte)))
+    (if-not (== old-byte new-byte)
+      (do (aset buf (bit-shift-right i 3) new-byte)
+          true)
+      false)))
 
 (defn -unset [buf i]
   (let [mask (bit-not (bit-shift-right 2r10000000 (rem i 8)))
         old-byte (aget buf (bit-shift-right i 3))
         new-byte (bit-and mask old-byte)]
-    (aset buf (bit-shift-right i 3) new-byte)))
+    (if-not (== old-byte new-byte)
+      (do (aset buf (bit-shift-right i 3) new-byte)
+          true)
+      false)))
 
 (deftype IndexedBitfield [bf i]
   ISeqable
