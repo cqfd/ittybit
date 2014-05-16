@@ -64,7 +64,9 @@
 (defn requesting [p]
   (go (if (bf/full? (:bitfield @t))
         (cleaning-up p)
-        (let [lucky-piece (rand-nth (:remaining @t))
+        (let [their-bf (get-in @t [:peers (:peer-id p) :bitfield])
+              our-bf (:bitfield @t)
+              lucky-piece (rand-nth (vec (bf/difference their-bf our-bf)))
               pbuf (js/Buffer. (minfo/piece->length (:minfo @t) lucky-piece))
               reqs (minfo/piece->requests (:minfo @t) lucky-piece)]
           (doseq [r reqs]
