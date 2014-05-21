@@ -22,7 +22,7 @@
     (when (> (.-length this) 0)
       (. this (slice 1))))
   ISeqable
-  (-seq [this] this)
+  (-seq [this] (prim-seq this 0))
   IEquiv
   (-equiv [this that]
     (and (not (nil? that))
