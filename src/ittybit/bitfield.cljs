@@ -85,6 +85,7 @@
   IEquiv
   (-equiv [this that]
     (and (set? that)
+         (== (count this) (count that))
          (every? #(contains? this %) that)))
   IFn
   (-invoke [this i]
