@@ -10,8 +10,7 @@
   (-lookup [a i] (aget a i))
   (-lookup [a i not-found] (or (aget a i) not-found))
   ISeqable
-  (-seq [this]
-    (prim-seq this 0)))
+  (-seq [this] (prim-seq this 0)))
 
 (extend-type js/Buffer
   ISeqable
