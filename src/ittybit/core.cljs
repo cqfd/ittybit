@@ -1,6 +1,7 @@
 (ns ittybit.core
   (:require-macros [cljs.core.async.macros :refer [alt! go]])
-  (:require [cljs.nodejs :as n]
+  (:require [ittybit.extensions]
+            [cljs.nodejs :as n]
             [cljs.core.async :refer [<! chan close! put! take!]]
             [ittybit.bitfield :as bf]
             [ittybit.fs :as fs]
@@ -8,9 +9,11 @@
             [ittybit.peer :as peer]
             [ittybit.protocol :as proto]
             [ittybit.tracker :as tracker]
-            [ittybit.utils :refer [sha1]]))
+            [ittybit.utils :refer [sha1]]
+            [om.core :as om :include-macros true]
+            [om.dom :as dom :include-macros true]))
 
-(n/enable-util-print!)
+(enable-console-print!)
 
 (def our-peer-id (js/Buffer. 20))
 
@@ -120,4 +123,20 @@
                   (>! (:outbox p) [:bitfield (.-buf (:bitfield @t))])
                   (choked p))))))))
 
-(set! *main-cli-fn* main)
+(om/root
+ (fn [app-state owner]
+   (reify
+     om/IWillMount
+     (will-mount [this]
+       (main "torrents/got.torrent"))
+     om/IRender
+     (render [this]
+       (let [peers (vals (:peers app-state))]
+         (dom/div nil
+           (dom/p nil (str "peers: " (count peers)))
+           (when (:minfo app-state)
+             (let [pieces (count (:bitfield app-state))
+                   total-pieces (minfo/num-pieces (:minfo app-state))]
+               (dom/p nil (str "pieces: " pieces "/" total-pieces)))))))))
+ t
+ {:target (. js/document (getElementById "root"))})

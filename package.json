@@ -1,0 +1,7 @@
+{
+    "name": "ittybit",
+    "main": "index.html",
+    "window": {
+        "toolbar": true
+    }
+}

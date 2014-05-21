@@ -5,7 +5,8 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-2202"]
                  [org.clojure/core.async "0.1.303.0-886421-alpha"]
-                 [org.clojure/core.match "0.2.1"]]
+                 [org.clojure/core.match "0.2.1"]
+                 [om "0.6.2"]]
 
   :node-dependencies [[bncode "*"]]
 
@@ -18,6 +19,7 @@
     :builds [{:id "ittybit"
               :source-paths ["src"]
               :compiler {
-                :output-to "out/ittybit.js"
-                :target :nodejs
-                :optimizations :simple}}]})
+                :output-to "ittybit.js"
+                :output-dir "out"
+                :optimizations :none
+                :source-map true}}]})
