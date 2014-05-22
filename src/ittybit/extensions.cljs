@@ -1,10 +1,5 @@
 (ns ittybit.extensions)
 
-(extend-type object
-  ILookup
-  (-lookup [o k] (aget o k))
-  (-lookup [o k not-found] (or (aget o k) not-found)))
-
 (extend-type array
   ILookup
   (-lookup [a i] (aget a i))
